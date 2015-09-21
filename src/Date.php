@@ -111,7 +111,7 @@ class Date extends Carbon {
 
         // Date difference
         $difference = abs($since->getTimestamp() - $this->getTimestamp());
-
+        
         // Default unit
         $unit = 'year';
 
@@ -123,12 +123,12 @@ class Date extends Carbon {
                 $unit = $key;
                 break;
             }
-
+            
             $difference = $difference / $value;
         }
-
+        //print_r($difference."<br/>");
         $difference = floor($difference);
-
+        
         // Select the suffix.
         if ($relative)
         {
@@ -142,6 +142,7 @@ class Date extends Carbon {
         // Some languages have different unit translations when used in combination
         // with a specific suffix. Here we will check if there is an optional
         // translation for that specific suffix and use it if it exists.
+        
         if ($lang->trans("${unit}_diff") != "${unit}_diff")
         {
             $ago = $lang->transChoice("${unit}_diff", $difference, array(':count' => $difference));
@@ -159,8 +160,80 @@ class Date extends Carbon {
         {
             return $ago;
         }
-
+        
         return $lang->transChoice($suffix, $difference, array(':time' => $ago));
+    }
+
+    /**
+     * Get the difference in a human readable format.
+     *
+     * @param  Date   $since
+     * @param  bool   $absolute Removes time difference modifiers ago, after, etc
+     * @return string
+     */
+    public function diffForTheiums(Carbon $since = null, $absolute = false)
+    {
+        // Get translator
+        $lang = $this->getTranslator();
+        
+        if (is_null($since))
+        {
+            $since = new static('now', $this->getTimezone());
+        }
+        // Date difference
+        $difference = abs($since->getTimestamp() - $this->getTimestamp());
+        $suffix = "before"; 
+        
+        // Default unit
+        $unit = 'year';
+        
+        if ($difference <= 10){
+            return "Birkaç saniye önce";
+        }else if($difference < 60){
+            $ago = $lang->transChoice("second", $difference, array(':count' => $difference));
+        }else if($difference < 3600){
+            $difference = floor($difference / 60);
+            $ago = $lang->transChoice("minute", $difference, array(':count' => $difference));
+        }else if($difference < 86400){
+            $difference = floor($difference / 60/ 60);
+            $ago = $lang->transChoice("hour", $difference, array(':count' => $difference));
+        }else if($difference < 172800){
+            return $lang->transChoice("yesterday", $difference, array(':count' => $difference)).", ".$this->format('H:i');
+        }else if($difference < 345600){
+            return $lang->transChoice("yesterday", $difference, array(':count' => $difference)).", ".$this->format('H:i');
+        }else if($difference < 28512000){
+            return $this->format('j F, H:i');
+        }else{
+            return $this->format('j F Y, H:i');
+        }
+        
+        return $lang->transChoice($suffix, $difference, array(':time' => $ago));
+        
+        //Dil seçeneği için uğraşmaya devam etmelisin. Buradaki sistemi anlaman lazım.
+        
+        /*
+        $result = "";
+        if ($difference <= 10){
+            $result = "Birkaç ".Lang::get("tags.second")." ".Lang::get("tags.ago");
+        }else if($difference < 60){
+            $result = $difference." ".Lang::get("tags.second")." ".Lang::get("tags.ago");
+        }else if($difference < 3600){
+            $minute = floor($difference / 60);
+            $result = $minute." ".Lang::get("tags.minute")." ".Lang::get("tags.ago");
+        }else if($difference < 86400){
+            $hour = floor($difference / 60 / 60);
+            $result = $hour." ".Lang::get("tags.hour")." ".Lang::get("tags.ago");
+        }else if($difference < 172800){
+            $result = Lang::get("tags.yesterday").", ".$this->format('H:i');
+        }else if($difference < 345600){
+            $result = Lang::get("tags.day_before_yesterday").", ".$this->format('H:i');
+        }else if($difference < 28512000){
+            $result = $this->format('j F, H:i');
+        }else{
+            $result = $this->format('j F Y, H:i');
+        }
+        return $result;
+        */
     }
 
     /**
@@ -241,7 +314,13 @@ class Date extends Carbon {
                 // Short notations.
                 if (in_array($character, array('D', 'M')))
                 {
-                    $translated = mb_substr($translated, 0, 3);
+                    if($translated = "Pazartesi")
+                        $translated = "Pts";
+                    else if($translated = "Cumartesi")
+                        $translated = "Cts";
+                    else
+                        $translated = mb_substr($translated, 0, 3);
+
                 }
 
                 // Add to replace list.
